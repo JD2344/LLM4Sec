@@ -1,0 +1,61 @@
+<?xml version="1.0"?>
+
+<hackerbot xmlns="http://www.github/cliffe/SecGen/hackerbotz"
+               xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+               xsi:schemaLocation="http://www.github/cliffe/SecGen/hackerbot">
+
+	<name>Scenario</name>
+    <description></description>
+
+    <channel>secchat</channel>
+    
+	<bot>
+        <name>bot1</name>
+        <!--The overall prompt to be used for the bot-->
+        <prompt>
+            Reply happily to the user message
+            {usr_in}
+        </prompt>
+        <!--How the bot should represent itself-->
+        <expression></expression>
+        <!--This is the task for the bot-->
+        <task></task>
+        <!--The task it needs to achieve that the user can exploit-->
+        <protects></protects>
+        <!--Allows Private messages between other bots-->
+        <pm_bots></pm_bots>        
+        <!-- Start in public chat, This allows a bot to initially talk in public-->
+        <SIP></SIP>
+	</bot>
+
+    <bot>
+        <!--Unique names-->
+        <name>bot2</name>
+        <!--The overall prompt to be used for the bot-->
+        <prompt>
+            Reply angrily to the user message
+            {usr_in}
+        </prompt>
+        <!--How the bot should represent itself-->
+        <expression></expression>
+        <!--This is the task for the bot-->
+        <task></task>
+        <!--The task it needs to achieve that the user can exploit-->
+        <protects></protects>
+        <!--Allows Private messages between other bots-->
+        <pm_bots></pm_bots>
+        <!-- Start in public chat, This allows a bot to initially talk in public-->
+        <SIP></SIP>
+	</bot>
+
+    <conversation>
+        <!--The participants-->
+        <bots>bot1|bot2</bots>
+        <!-- Current name -->
+        <name>Exchange private</name>
+        <!-- The amount of messages to exchange -->
+        <chain_length>10</chain_length>
+        <!-- control conversation when element exposed in chat -->
+        <expose></expose>
+    </conversation>
+</hackerbot>
