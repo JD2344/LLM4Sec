@@ -1,15 +1,16 @@
 #!/usr/bin/env python
 import logging, argparse, sys, os, asyncio
 
-from threading import Thread
-
 import irc
 from irc.client_aio import AioReactor, Reactor
 
 from langchain_community.llms.gpt4all import GPT4All
 
-from llm_irc import LLMClient
-from scen_parser import SecGenScenarioController
+from lib.protocol.llm_irc import LLMClient
+from lib.xml.scen_parser import SecGenScenarioController
+
+logging.basicConfig(filename='logs/debug.log', filemode='w', format='%(asctime)s %(message)s',
+                    encoding='utf-8', level=logging.DEBUG)
 
 def create_connections(loop, sp, irc_handler, model):
     bots = sp.get_bots()
@@ -22,9 +23,9 @@ def create_connections(loop, sp, irc_handler, model):
             )
             llmc = LLMClient(sp, bot, model)
             c.add_global_handler("privmsg", llmc.on_privmsg)
+            c.add_global_handler("disconnect", llmc.on_disconnect)
             if bot.find("SIP") != None:
                 c.add_global_handler("pubmsg", llmc.on_pubmsg)
-            c.add_global_handler("disconnect", llmc.on_disconnect)
         except irc.client.ServerConnectionError:
             print(sys.exc_info()[1])
             raise SystemExit(1) from None
@@ -53,21 +54,30 @@ def main():
 
     if args.run:
         if args.scenario:
-            llm = GPT4All(model=args.model, allow_download=args.download, n_threads=args.threads, device=args.device, streaming=args.printstream)
-            sp = SecGenScenarioController(args.scenario)
-            loop = asyncio.get_event_loop()
-            irc_handler = AioReactor(loop=loop)
-            server = irc_handler.server()
-            create_connections(loop, sp, irc_handler, llm)
-            if sp.isParsed:
-                for connection in irc_handler.connections:
-                    if connection.connected:
-                        connection.join("#"+sp.get_channel(), connection.username)
+            sp = SecGenScenarioController()
+            isParsed = sp.parse_scenario(args.scenario)
 
-            try:
-                irc_handler.process_forever()
-            finally:
-                loop.close()
+            if isParsed:
+                sp.bot_count = len(sp.get_bots())
+                llm = GPT4All(model=args.model, allow_download=args.download, n_threads=args.threads, device=args.device, streaming=args.printstream)
+                loop = asyncio.new_event_loop()
+                irc_handler = AioReactor(loop=loop)
+
+                server = irc_handler.server()
+                create_connections(loop, sp, irc_handler, llm)
+                if sp.isParsed:
+                    for connection in irc_handler.connections:
+                        if connection.connected:
+                            connection.join("#"+sp.get_channel(), connection.username)
+
+                try:
+                    irc_handler.process_forever()
+                finally:
+                    loop.close()
+            else:
+                print("Scenario Unable to be parsed, please check the scenario exists and is valid")
+        else:
+            print("No scenario provided...")
 
 if __name__ == "__main__":
     main()
